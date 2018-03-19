@@ -10,7 +10,7 @@ enum Direction {
     UP = 0, DOWN = 180
 }
 
-let gameSpeed = 200
+let numberOfPasses = 1
 let paddlePosition = 1
 let paddle = {
     leftEdge: game.createSprite(paddlePosition, 4),
@@ -21,6 +21,10 @@ ball.setDirection(Direction.UP)
 let ballVelocity = 1
 let showScore = false
 let onCourt = true
+
+function getGameSpeed() {
+    return Math.max((300 - (numberOfPasses * 20)), 50)
+}
 
 game.setLife(3)
 game.pause()
@@ -51,7 +55,7 @@ radio.onDataPacketReceived((packet) => {
         ball.setX(Math.random(5))
         ball.setDirection(Direction.DOWN)
         ball.on()
-        basic.pause(gameSpeed)
+        basic.pause(getGameSpeed())
         game.resume()
     } else if (packet.receivedNumber === Radio.GAME_OVER) {
         game.addScore(1)
@@ -62,11 +66,12 @@ radio.onDataPacketReceived((packet) => {
 basic.forever(() => {
     if (!game.isPaused()) {
         ball.move(ballVelocity)
-        basic.pause(gameSpeed)
+        basic.pause(getGameSpeed())
         if (ball.isTouching(paddle.leftEdge) || ball.isTouching(paddle.rightEdge)) {
             ball.setDirection(Direction.UP)
         } else if (onCourt && ball.isTouchingEdge() && ball.direction() === Direction.UP) {
             radio.sendNumber(Radio.BALL)
+            numberOfPasses++
             onCourt = false
             showScore = false
             ball.off()
@@ -76,6 +81,7 @@ basic.forever(() => {
                 radio.sendNumber(Radio.GAME_OVER)
                 game.gameOver()
             } else {
+                numberOfPasses = 1
                 game.removeLife(1)
                 showScore = true
                 ball.setDirection(Direction.UP)
@@ -93,5 +99,6 @@ basic.forever(() => {
 
 function resetGame() {
     showScore = false
+    numberOfPasses = 1
     basic.clearScreen()
 }
